@@ -19,9 +19,10 @@ namespace TSRpg.Logicas
 
         public static int MinionCount(int playerIndex) => minionCounts.TryGetValue(playerIndex, out int n) ? n : 0;
 
-        // Last game tick each player was healed by lifesteal.
+        // Last game tick each player was healed by lifesteal, or healed someone with a team heal.
         private static readonly Dictionary<int, long> lastHeal = new();
         private const int LifestealCooldownTicks = 15;
+        private const float TeamHealRange = 50 * 16f;
 
         public static void ForgetPlayer(int playerIndex)
         {
@@ -89,6 +90,17 @@ namespace TSRpg.Logicas
                         NetMessage.SendData((int)PacketTypes.NpcAddBuff, -1, -1, null, npc.whoAmI, perk.BuffId, ticks);
                         break;
 
+                    case "teamheal":
+                        if (lastHeal.TryGetValue(tsPlayer.Index, out long lastTeam) && tick - lastTeam < LifestealCooldownTicks) break;
+                        var target = MostHurtNearby(tsPlayer);
+                        int amount = (int)Math.Min(perk.Max > 0 ? perk.Max : int.MaxValue, Math.Round(args.Damage * perk.Value));
+                        if (target != null && amount > 0)
+                        {
+                            target.Heal(amount);
+                            lastHeal[tsPlayer.Index] = tick;
+                        }
+                        break;
+
                     case "lifesteal":
                         if (lastHeal.TryGetValue(tsPlayer.Index, out long last) && tick - last < LifestealCooldownTicks) break;
                         int heal = (int)Math.Min(perk.Max > 0 ? perk.Max : int.MaxValue, Math.Round(args.Damage * perk.Value));
@@ -108,6 +120,26 @@ namespace TSRpg.Logicas
             // The packet encodes the hit direction as 0/2 for -1/+1.
             TSPlayer.Server.StrikeNPC(npc.whoAmI, bonus + npc.defense / 2, 0f, args.Direction > 1 ? 1 : -1);
             return bonus;
+        }
+
+        /// <summary>Lowest life ratio among living players near the caster (caster included), if anyone is hurt.</summary>
+        private static TSPlayer? MostHurtNearby(TSPlayer caster)
+        {
+            TSPlayer? best = null;
+            double bestRatio = 1.0;
+            foreach (var p in TShock.Players)
+            {
+                if (p == null || !p.Active || p.Dead || p.TPlayer.statLifeMax2 <= 0) continue;
+                if (Microsoft.Xna.Framework.Vector2.Distance(p.TPlayer.Center, caster.TPlayer.Center) > TeamHealRange) continue;
+
+                double ratio = (double)p.TPlayer.statLife / p.TPlayer.statLifeMax2;
+                if (ratio < bestRatio)
+                {
+                    bestRatio = ratio;
+                    best = p;
+                }
+            }
+            return best;
         }
 
         private static bool UsesClassWeapon(TSPlayer tsPlayer, ClassDefinition cls)

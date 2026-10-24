@@ -44,15 +44,15 @@ All classes gain **+1.5% damage per level** (up to +73.5% at level 50) on hits w
 | 1 | Ironskin | Mana Regeneration | Archery | Summoning |
 | 5 | Regeneration | Magic Power | Swiftness | Regeneration |
 | 10 | *Lifesteal* 3% | *Frost Touch* (Frostburn) | *Headshot* +100% | *Toxin* (Poisoned) |
-| 15 | Endurance | Clairvoyance | Ammo Reservation | Bewitched |
+| 15 | Endurance | Clairvoyance, *Spectral Mend* (team heal) | Ammo Reservation | Bewitched |
 | 20 | *Brutal Strike* +75% | *Arcane Burst* +150% | *Armor Pierce* (Ichor) | *Venom* |
 | 25 | Lifeforce | Regeneration | Hunter | Swiftness |
 | 30 | *Sunder* (Ichor) | *Shadowflame* | *Incendiary* (Cursed Inferno) | *Pack Instinct* +100% |
 | 35 | Titan | Rage | Rage | Ironskin |
-| 40 | *Bloodlust* +2% lifesteal | *Siphon* 2% lifesteal | *Deadeye* +200% | *Life Bond* 1% lifesteal |
+| 40 | *Bloodlust* +2% lifesteal | *Spectral Mastery* (more team heal) | *Deadeye* +200% | *Life Bond* 1% lifesteal |
 | 45 | Thorns | Wrath | Wrath | Wrath |
 
-*Italic* entries are perks, effects that trigger on hit. Buffs, perks, chances and values can all be changed in the config.
+*Italic* entries are perks, effects that trigger on hit. The mage's heals go to the most hurt player nearby (the mage included), like the Spectre hood. Buffs, perks, chances and values can all be changed in the config.
 
 ## Difficulty scaling
 

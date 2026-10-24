@@ -16,8 +16,10 @@ namespace TSRpg.Logicas
 
     /// <summary>
     /// On-hit effect triggered by a hit with the class damage type.
-    /// Types: "lifesteal" (heal Value × damage, capped by Max), "strike" (Chance to deal
-    /// Value × damage as extra damage), "debuff" (Chance to apply BuffId to the NPC).
+    /// Types: "lifesteal" (heal Value × damage, capped by Max), "teamheal" (same amount, but it
+    /// heals the most hurt player nearby, the caster included, like the Spectre hood),
+    /// "strike" (Chance to deal Value × damage as extra damage), "debuff" (Chance to apply
+    /// BuffId to the NPC).
     /// </summary>
     public class ClassPerk
     {
@@ -192,9 +194,10 @@ namespace TSRpg.Logicas
                 Perks = new()
                 {
                     new ClassPerk { Id = "frost", Type = "debuff", Level = 10, Chance = 0.20, BuffId = BuffID.Frostburn, DurationSeconds = 4 },
+                    new ClassPerk { Id = "spectre", Type = "teamheal", Level = 15, Value = 0.03, Max = 6 },
                     new ClassPerk { Id = "arcane", Type = "strike", Level = 20, Chance = 0.10, Value = 1.5 },
                     new ClassPerk { Id = "shadowflame", Type = "debuff", Level = 30, Chance = 0.20, BuffId = BuffID.ShadowFlame, DurationSeconds = 4 },
-                    new ClassPerk { Id = "siphon", Type = "lifesteal", Level = 40, Value = 0.02, Max = 6 }
+                    new ClassPerk { Id = "spectre_mastery", Type = "teamheal", Level = 40, Value = 0.03, Max = 6 }
                 },
                 Passives = new()
                 {
