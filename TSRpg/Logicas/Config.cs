@@ -31,6 +31,26 @@ namespace TSRpg.Logicas
         public int DurationSeconds { get; set; }
     }
 
+    /// <summary>
+    /// Always-on effect checked once per second. Types:
+    /// "combat_regen" / "rest_regen" heal Value every IntervalSeconds while in / out of combat;
+    /// "minion_regen" heals Value per active minion every IntervalSeconds;
+    /// "low_life_buff" applies BuffIds while life is at or below Threshold (0.3 = 30%);
+    /// "idle_buff" applies BuffIds while standing still;
+    /// "mana_refund" has Chance on each class hit to restore mana (a mana star is dropped on the player).
+    /// </summary>
+    public class ClassPassive
+    {
+        public string Id { get; set; } = "";
+        public string Type { get; set; } = "";
+        public int Level { get; set; }
+        public double Value { get; set; }
+        public double Chance { get; set; } = 1.0;
+        public int IntervalSeconds { get; set; } = 1;
+        public double Threshold { get; set; }
+        public List<int> BuffIds { get; set; } = new();
+    }
+
     public class ClassDefinition
     {
         /// <summary>Internal id, also the translation key suffix (class.&lt;id&gt;).</summary>
@@ -44,6 +64,8 @@ namespace TSRpg.Logicas
         /// <summary>Buffs kept permanently active once the player reaches each level.</summary>
         public List<ClassBuff> Buffs { get; set; } = new();
         public List<ClassPerk> Perks { get; set; } = new();
+        /// <summary>Null when missing from an older config file; filled from the defaults on load.</summary>
+        public List<ClassPassive>? Passives { get; set; }
     }
 
     public class Config
@@ -88,6 +110,10 @@ namespace TSRpg.Logicas
         public int ClassChangeCooldownMinutes { get; set; } = 60;
         public int BuffRefreshSeconds { get; set; } = 5;
         public bool ShowPerkPopup { get; set; } = true;
+        /// <summary>Seconds without hitting or being hit before a player counts as out of combat.</summary>
+        public int OutOfCombatSeconds { get; set; } = 5;
+        /// <summary>Life healed per second out of combat, for every player with a class.</summary>
+        public int RestRegenPerSecond { get; set; } = 2;
         public List<ClassDefinition> Classes { get; set; } = DefaultClasses();
 
         // ── Mob & boss scaling ───────────────────────────────────────────────
@@ -145,6 +171,12 @@ namespace TSRpg.Logicas
                     new ClassPerk { Id = "brutal", Type = "strike", Level = 20, Chance = 0.10, Value = 0.75 },
                     new ClassPerk { Id = "sunder", Type = "debuff", Level = 30, Chance = 0.15, BuffId = BuffID.Ichor, DurationSeconds = 5 },
                     new ClassPerk { Id = "bloodlust", Type = "lifesteal", Level = 40, Value = 0.02, Max = 6 }
+                },
+                Passives = new()
+                {
+                    new ClassPassive { Id = "second_wind", Type = "combat_regen", Level = 5, Value = 2, IntervalSeconds = 2 },
+                    new ClassPassive { Id = "berserk", Type = "low_life_buff", Level = 20, Threshold = 0.3, BuffIds = new() { BuffID.Rage, BuffID.Wrath } },
+                    new ClassPassive { Id = "iron_will", Type = "combat_regen", Level = 35, Value = 3, IntervalSeconds = 2 }
                 }
             },
             new ClassDefinition
@@ -163,6 +195,12 @@ namespace TSRpg.Logicas
                     new ClassPerk { Id = "arcane", Type = "strike", Level = 20, Chance = 0.10, Value = 1.5 },
                     new ClassPerk { Id = "shadowflame", Type = "debuff", Level = 30, Chance = 0.20, BuffId = BuffID.ShadowFlame, DurationSeconds = 4 },
                     new ClassPerk { Id = "siphon", Type = "lifesteal", Level = 40, Value = 0.02, Max = 6 }
+                },
+                Passives = new()
+                {
+                    new ClassPassive { Id = "mana_flow", Type = "mana_refund", Level = 1, Chance = 0.05 },
+                    new ClassPassive { Id = "arcane_shield", Type = "low_life_buff", Level = 15, Threshold = 0.3, BuffIds = new() { BuffID.Endurance, BuffID.Regeneration } },
+                    new ClassPassive { Id = "mana_tide", Type = "mana_refund", Level = 30, Chance = 0.05 }
                 }
             },
             new ClassDefinition
@@ -181,6 +219,12 @@ namespace TSRpg.Logicas
                     new ClassPerk { Id = "pierce", Type = "debuff", Level = 20, Chance = 0.15, BuffId = BuffID.Ichor, DurationSeconds = 5 },
                     new ClassPerk { Id = "incendiary", Type = "debuff", Level = 30, Chance = 0.20, BuffId = BuffID.CursedInferno, DurationSeconds = 4 },
                     new ClassPerk { Id = "deadeye", Type = "strike", Level = 40, Chance = 0.08, Value = 2.0 }
+                },
+                Passives = new()
+                {
+                    new ClassPassive { Id = "steady_aim", Type = "idle_buff", Level = 10, BuffIds = new() { BuffID.Rage } },
+                    new ClassPassive { Id = "survival", Type = "low_life_buff", Level = 20, Threshold = 0.3, BuffIds = new() { BuffID.Endurance, BuffID.Regeneration } },
+                    new ClassPassive { Id = "field_medic", Type = "rest_regen", Level = 30, Value = 3, IntervalSeconds = 1 }
                 }
             },
             new ClassDefinition
@@ -199,6 +243,12 @@ namespace TSRpg.Logicas
                     new ClassPerk { Id = "venom", Type = "debuff", Level = 20, Chance = 0.20, BuffId = BuffID.Venom, DurationSeconds = 5 },
                     new ClassPerk { Id = "pack", Type = "strike", Level = 30, Chance = 0.08, Value = 1.0 },
                     new ClassPerk { Id = "bond", Type = "lifesteal", Level = 40, Value = 0.01, Max = 4 }
+                },
+                Passives = new()
+                {
+                    new ClassPassive { Id = "spirit_link", Type = "minion_regen", Level = 5, Value = 1, IntervalSeconds = 3 },
+                    new ClassPassive { Id = "guardian", Type = "low_life_buff", Level = 20, Threshold = 0.3, BuffIds = new() { BuffID.Endurance, BuffID.Regeneration } },
+                    new ClassPassive { Id = "swarm", Type = "minion_regen", Level = 35, Value = 1, IntervalSeconds = 3 }
                 }
             }
         };
@@ -233,6 +283,18 @@ namespace TSRpg.Logicas
                 }
 
                 var config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath), JsonSettings) ?? new Config();
+
+                // Configs written before passives existed: give the bundled classes their default passives.
+                var defaults = DefaultClasses();
+                bool upgraded = false;
+                foreach (var cls in config.Classes.Where(c => c.Passives == null))
+                {
+                    cls.Passives = defaults.FirstOrDefault(d => d.Id == cls.Id)?.Passives ?? new();
+                    upgraded = true;
+                }
+                if (upgraded)
+                    config.Save();
+
                 TShock.Log.ConsoleInfo("TSRpg: config loaded successfully.");
                 return config;
             }

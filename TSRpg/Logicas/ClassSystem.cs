@@ -14,8 +14,10 @@ namespace TSRpg.Logicas
     {
         private static readonly Random random = new();
 
-        // Players owning at least one minion or sentry, refreshed periodically.
-        private static readonly HashSet<int> hasMinions = new();
+        // Active minions and sentries per player, refreshed periodically.
+        private static readonly Dictionary<int, int> minionCounts = new();
+
+        public static int MinionCount(int playerIndex) => minionCounts.TryGetValue(playerIndex, out int n) ? n : 0;
 
         // Last game tick each player was healed by lifesteal.
         private static readonly Dictionary<int, long> lastHeal = new();
@@ -23,7 +25,7 @@ namespace TSRpg.Logicas
 
         public static void ForgetPlayer(int playerIndex)
         {
-            hasMinions.Remove(playerIndex);
+            minionCounts.Remove(playerIndex);
             lastHeal.Remove(playerIndex);
         }
 
@@ -42,12 +44,12 @@ namespace TSRpg.Logicas
 
         public static void RefreshMinionOwners()
         {
-            hasMinions.Clear();
+            minionCounts.Clear();
             for (int i = 0; i < Main.maxProjectiles; i++)
             {
                 var proj = Main.projectile[i];
                 if (proj.active && (proj.minion || proj.sentry) && proj.owner >= 0 && proj.owner < Main.maxPlayers)
-                    hasMinions.Add(proj.owner);
+                    minionCounts[proj.owner] = MinionCount(proj.owner) + 1;
             }
         }
 
@@ -64,6 +66,8 @@ namespace TSRpg.Logicas
 
             var npc = Main.npc[args.ID];
             if (!npc.active || npc.dontTakeDamage || npc.immortal || npc.friendly) return 0;
+
+            Passives.OnClassHit(tsPlayer, rpg, cls, tick);
 
             var t = Translations.Instance;
             double extra = args.Damage * cls.DamagePerLevel * (rpg.Level - 1);
@@ -115,7 +119,7 @@ namespace TSRpg.Logicas
                 "ranged" => item.ranged,
                 "magic"  => item.magic,
                 // Minions hit no matter what the player is holding.
-                "summon" => item.summon || hasMinions.Contains(tsPlayer.Index),
+                "summon" => item.summon || MinionCount(tsPlayer.Index) > 0,
                 _ => false
             };
         }

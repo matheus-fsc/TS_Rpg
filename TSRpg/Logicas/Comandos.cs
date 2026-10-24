@@ -128,10 +128,18 @@ namespace TSRpg.Logicas
             var perks = cls.Perks.Where(p => p.Level <= rpg.Level).Select(p => t.Get($"perk.{p.Id}")).ToList();
             player.SendInfoMessage(t.Get("cmd.stats.perks", perks.Count > 0 ? string.Join(", ", perks) : t.Get("cmd.stats.no_buffs")));
 
+            var passives = (cls.Passives ?? new()).Where(p => p.Level <= rpg.Level).Select(p => t.Get($"passive.{p.Id}")).ToList();
+            player.SendInfoMessage(t.Get("cmd.stats.passives", passives.Count > 0 ? string.Join(", ", passives) : t.Get("cmd.stats.no_buffs")));
+
             // What the next unlock is, to give the player something to chase.
             var nextBuff = cls.Buffs.Where(b => b.Level > rpg.Level).OrderBy(b => b.Level).FirstOrDefault();
             var nextPerk = cls.Perks.Where(p => p.Level > rpg.Level).OrderBy(p => p.Level).FirstOrDefault();
-            if (nextPerk != null && (nextBuff == null || nextPerk.Level <= nextBuff.Level))
+            var nextPassive = (cls.Passives ?? new()).Where(p => p.Level > rpg.Level).OrderBy(p => p.Level).FirstOrDefault();
+            if (nextPassive != null
+                && (nextPerk == null || nextPassive.Level < nextPerk.Level)
+                && (nextBuff == null || nextPassive.Level <= nextBuff.Level))
+                player.SendInfoMessage(t.Get("cmd.stats.next", nextPassive.Level, $"{t.Get($"passive.{nextPassive.Id}")} — {t.Get($"passive.{nextPassive.Id}.desc")}"));
+            else if (nextPerk != null && (nextBuff == null || nextPerk.Level <= nextBuff.Level))
                 player.SendInfoMessage(t.Get("cmd.stats.next", nextPerk.Level, $"{t.Get($"perk.{nextPerk.Id}")} — {t.Get($"perk.{nextPerk.Id}.desc")}"));
             else if (nextBuff != null)
                 player.SendInfoMessage(t.Get("cmd.stats.next", nextBuff.Level, TShock.Utils.GetBuffName(nextBuff.BuffId)));

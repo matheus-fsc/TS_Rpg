@@ -154,6 +154,8 @@ namespace TSRpg.Logicas
                     tsPlayer.SendSuccessMessage(t.Get("level.up.buff", TShock.Utils.GetBuffName(buff.BuffId)));
                 foreach (var perk in cls.Perks.Where(p => p.Level == rpg.Level))
                     tsPlayer.SendSuccessMessage(t.Get("level.up.perk", t.Get($"perk.{perk.Id}"), t.Get($"perk.{perk.Id}.desc")));
+                foreach (var passive in (cls.Passives ?? new()).Where(p => p.Level == rpg.Level))
+                    tsPlayer.SendSuccessMessage(t.Get("level.up.passive", t.Get($"passive.{passive.Id}"), t.Get($"passive.{passive.Id}.desc")));
             }
 
             ClassSystem.ApplyClassBuffs(tsPlayer, rpg);

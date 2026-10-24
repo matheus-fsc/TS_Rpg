@@ -30,6 +30,7 @@ namespace TSRpg.Logicas
 
             GetDataHandlers.NPCStrike += OnNpcStrike;
             GetDataHandlers.KillMe += OnKillMe;
+            GetDataHandlers.PlayerDamage += OnPlayerDamage;
             ServerApi.Hooks.NpcKilled.Register(this, Progression.OnNpcKilled);
             ServerApi.Hooks.NpcSpawn.Register(this, OnNpcSpawn);
             ServerApi.Hooks.GameUpdate.Register(this, OnGameUpdate);
@@ -48,6 +49,7 @@ namespace TSRpg.Logicas
 
                 GetDataHandlers.NPCStrike -= OnNpcStrike;
                 GetDataHandlers.KillMe -= OnKillMe;
+                GetDataHandlers.PlayerDamage -= OnPlayerDamage;
                 ServerApi.Hooks.NpcKilled.Deregister(this, Progression.OnNpcKilled);
                 ServerApi.Hooks.NpcSpawn.Deregister(this, OnNpcSpawn);
                 ServerApi.Hooks.GameUpdate.Deregister(this, OnGameUpdate);
@@ -88,6 +90,7 @@ namespace TSRpg.Logicas
 
             Progression.ForgetPlayer(args.Who);
             ClassSystem.ForgetPlayer(args.Who);
+            Passives.ForgetPlayer(args.Who);
         }
 
         private void OnWorldSave(WorldSaveEventArgs args)
@@ -108,6 +111,8 @@ namespace TSRpg.Logicas
             if (args.Player == null || args.ID < 0 || args.ID >= Main.maxNPCs || args.Damage <= 0) return;
             if (!Players.TryGetValue(args.Player.Index, out var rpg)) return;
 
+            Passives.MarkCombat(args.Player.Index, tick);
+
             // Record the reported hit first so a kill by the class bonus below still credits it.
             Progression.RecordDamage(args.ID, args.Player.Index, args.Damage);
 
@@ -121,6 +126,13 @@ namespace TSRpg.Logicas
             // The slot now holds a fresh NPC: forget whatever the previous occupant left behind.
             Progression.Forget(args.NpcId);
             MobScaling.OnNpcSpawn(args);
+        }
+
+        private void OnPlayerDamage(object? sender, PlayerDamageEventArgs args)
+        {
+            // args.ID is the player who got hurt (not necessarily the sender).
+            if (args.ID < Main.maxPlayers)
+                Passives.MarkCombat(args.ID, tick);
         }
 
         private void OnKillMe(object? sender, KillMeEventArgs args)
@@ -145,6 +157,17 @@ namespace TSRpg.Logicas
                     var tsPlayer = TShock.Players[index];
                     if (tsPlayer != null && tsPlayer.Active && !tsPlayer.Dead)
                         ClassSystem.ApplyClassBuffs(tsPlayer, rpg);
+                }
+            }
+
+            if (tick % 60 == 0)
+            {
+                foreach (var (index, rpg) in Players)
+                {
+                    var tsPlayer = TShock.Players[index];
+                    var cls = Config.FindClass(rpg.ClassId);
+                    if (tsPlayer != null && tsPlayer.Active && !tsPlayer.Dead && cls != null)
+                        Passives.Tick(tsPlayer, rpg, cls, tick);
                 }
             }
 
