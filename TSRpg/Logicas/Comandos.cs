@@ -17,6 +17,11 @@ namespace TSRpg.Logicas
                 AllowServer = false,
                 HelpText = "Shows your level, XP, class bonuses and perks."
             });
+            Commands.ChatCommands.Add(new Command(ClassMenu.Command, "menu", "rpgmenu")
+            {
+                AllowServer = false,
+                HelpText = "Opens the class menu in a chest window (needs server side characters)."
+            });
             Commands.ChatCommands.Add(new Command(TopCommand, "rpgtop")
             {
                 HelpText = "Shows the highest level players."
@@ -69,21 +74,29 @@ namespace TSRpg.Logicas
                 return;
             }
 
+            TryChangeClass(player, rpg, cls);
+        }
+
+        /// <summary>Picks a class for the player, with the same rules for /class and the class menu.</summary>
+        internal static bool TryChangeClass(TSPlayer player, RpgPlayer rpg, ClassDefinition cls)
+        {
+            var t = Translations.Instance;
+
             if (cls.Id == rpg.ClassId)
             {
                 player.SendErrorMessage(t.Get("cmd.class.same", t.ClassName(cls.Id)));
-                return;
+                return false;
             }
 
             // The first pick is free; switching afterwards has a cooldown.
             if (rpg.ClassId != null && rpg.ClassChangedAt.HasValue)
             {
-                var ready = rpg.ClassChangedAt.Value.AddMinutes(config.ClassChangeCooldownMinutes);
+                var ready = rpg.ClassChangedAt.Value.AddMinutes(RpgPlugin.Config.ClassChangeCooldownMinutes);
                 if (DateTime.UtcNow < ready)
                 {
                     int minutes = (int)Math.Ceiling((ready - DateTime.UtcNow).TotalMinutes);
                     player.SendErrorMessage(t.Get("cmd.class.cooldown", minutes));
-                    return;
+                    return false;
                 }
             }
 
@@ -94,6 +107,7 @@ namespace TSRpg.Logicas
 
             ClassSystem.ApplyClassBuffs(player, rpg);
             player.SendSuccessMessage(t.Get("cmd.class.changed", t.ClassName(cls.Id)));
+            return true;
         }
 
         public static void StatsCommand(CommandArgs args)

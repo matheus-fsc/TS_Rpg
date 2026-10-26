@@ -38,6 +38,7 @@ namespace TSRpg.Logicas
             ServerApi.Hooks.ServerLeave.Register(this, OnServerLeave);
             ServerApi.Hooks.WorldSave.Register(this, OnWorldSave);
 
+            ChestMenus.Register(this);
             Comandos.Register();
         }
 
@@ -56,6 +57,7 @@ namespace TSRpg.Logicas
                 ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnServerLeave);
                 ServerApi.Hooks.WorldSave.Deregister(this, OnWorldSave);
+                ChestMenus.Deregister(this);
             }
             base.Dispose(disposing);
         }
@@ -91,6 +93,8 @@ namespace TSRpg.Logicas
             Progression.ForgetPlayer(args.Who);
             ClassSystem.ForgetPlayer(args.Who);
             Passives.ForgetPlayer(args.Who);
+            ChestMenus.ForgetPlayer(args.Who);
+            ClassMenu.ForgetPlayer(args.Who);
         }
 
         private void OnWorldSave(WorldSaveEventArgs args)
@@ -146,6 +150,7 @@ namespace TSRpg.Logicas
         private void OnGameUpdate(EventArgs args)
         {
             tick++;
+            ChestMenus.Update();
 
             if (tick % 30 == 0)
                 ClassSystem.RefreshMinionOwners();
