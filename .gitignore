@@ -402,3 +402,6 @@ SUBMISSION_GUIDE.md
 
 # Local TShock test server (runtime, world backups, credentials)
 server/
+
+# Local drafts
+docs/relogic-suggestion*
