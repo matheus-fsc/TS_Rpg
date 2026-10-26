@@ -148,7 +148,7 @@ namespace TSRpg.Logicas
                     { "cmd.admin.done", "Feito: {0} agora está no nível {1} ({2})." },
                     { "cmd.reload.success", "Config e traduções do TSRpg recarregadas!" },
 
-                    { "menu.title.classes", "Classes" },
+                    { "menu.title.current", "Nv {0} {1}" },
                     { "menu.title.test", "Teste ({0} slots)" },
                     { "menu.ssc_required", "Este menu precisa de personagens no servidor (SSC). Use /classe e /rpg." },
                     { "menu.no_spot", "Não deu para abrir o menu aqui. Tente de novo em outro lugar." },
@@ -249,7 +249,7 @@ namespace TSRpg.Logicas
                 { "cmd.admin.done", "Done: {0} is now level {1} ({2})." },
                 { "cmd.reload.success", "TSRpg config and translations reloaded!" },
 
-                { "menu.title.classes", "Classes" },
+                { "menu.title.current", "Lv {0} {1}" },
                 { "menu.title.test", "Test ({0} slots)" },
                 { "menu.ssc_required", "This menu needs server side characters (SSC). Use /class and /rpg instead." },
                 { "menu.no_spot", "The menu could not open here. Try again somewhere else." },

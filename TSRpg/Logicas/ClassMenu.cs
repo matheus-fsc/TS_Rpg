@@ -69,7 +69,13 @@ namespace TSRpg.Logicas
         {
             var t = Translations.Instance;
             var config = RpgPlugin.Config;
-            var menu = new ChestMenu { Title = t.Get("menu.title.classes") };
+            var current = config.FindClass(rpg.ClassId);
+            var menu = new ChestMenu
+            {
+                Title = current == null
+                    ? Title(ItemID.Book, LockedColor, t.Get("class.none"))
+                    : Title(ClassIcon(current), CurrentColor, t.Get("menu.title.current", rpg.Level, t.ClassName(current.Id)))
+            };
 
             for (int i = 0; i < config.Classes.Count && FirstClassSlot + i < 10; i++)
             {
@@ -86,7 +92,6 @@ namespace TSRpg.Logicas
                 };
             }
 
-            var current = config.FindClass(rpg.ClassId);
             if (current == null)
                 return menu;
 
