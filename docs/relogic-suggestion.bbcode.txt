@@ -1,0 +1,17 @@
+Hey everyone!
+
+I write open source TShock plugins and run a server to test them. Right now I'm working on an RPG plugin ([URL='https://github.com/matheus-fsc/TS_Rpg']TS_Rpg[/URL]) where players pick a class and unlock skills as they level up, plus a loot chest plugin ([URL='https://github.com/matheus-fsc/TSLootChest']TSLootChest[/URL]). Since the server can't open custom UI on a vanilla client, I built the class menu out of a chest window. The 1.4.5 chest changes (resizing and scrolling) made this so much nicer, so thanks for that!
+
+There's one thing I keep running into, though: names. Every icon in the menu still shows its vanilla item name. Hover over the "Lifesteal" skill and you get [I]Vampire Knives[/I]. Hover over the class "Warrior" and it says [I]Iron Broadsword[/I]. Right now all a server can do is change the chest title or spam the chat to explain what each icon means, and players get confused fast.
+
+So my suggestion is pretty small: let the server send a display name (and maybe a tooltip) for a chest slot it controls.
+
+The game already has most of this. [ICODE]Item.SetNameOverride[/ICODE] exists, and [ICODE]SetDefaults[/ICODE] already clears the override whenever a slot changes, so a fake name could never stick to a real item. It could be a new optional message or an extra field in the chest item message. Old clients would just ignore it, and single player wouldn't change at all.
+
+I know the obvious worry is someone renaming a Wooden Sword to "Zenith" to scam people in a trade. To avoid that, it could only apply to slots in server-sent chests (never your own inventory), and the name could show up in a different color. Servers can already put any text in chest titles and chat anyway, so it doesn't really open anything new.
+
+Plugin devs and server owners build shops, quest boards, class pickers and all sorts of menus this way, so I think a lot of people would get use out of it. If anyone wants to see how the chest menu works today, the code is in the repo above. What do you think?
+
+[I](Screenshot of the current menu here.)[/I]
+
+[SIZE=2][I]I wrote this in Portuguese and used an AI assistant to help with the English.[/I][/SIZE]
