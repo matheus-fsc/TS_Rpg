@@ -31,6 +31,7 @@ TSRpg adds a light RPG layer on top of vanilla Terraria. It works with the unmod
 | --- | --- | --- |
 | `/class [name]` (`/classe`) | none | Lists the classes or picks one. The first pick is free; switching again has a cooldown. |
 | `/rpg` (`/nivel`, `/level`) | none | Shows your level, XP, damage bonus, active buffs and perks, and the next unlock. |
+| `/menu` (`/rpgmenu`) | none | Opens the class menu in a chest window. Needs server side characters (SSC). |
 | `/rpgtop` | none | Highest level players. |
 | `/rpgadmin <setlevel\|givexp\|setclass\|reset> <player> [value]` | `tsrpg.admin` | Admin tools. |
 | `/rpgreload` | `tsrpg.admin` | Reloads the config and translations. |
@@ -53,6 +54,23 @@ All classes gain **+1.5% damage per level** (up to +73.5% at level 50) on hits w
 | 45 | Thorns | Wrath | Wrath | Wrath |
 
 *Italic* entries are perks, effects that trigger on hit. The mage's heals go to the most hurt player nearby (the mage included), like the Spectre hood. Buffs, perks, chances and values can all be changed in the config.
+
+## Class menu
+
+`/menu` shows the classes and your unlocks in a vanilla chest window, so players can browse and pick a class without typing names.
+
+- **Top row:** the four classes. Your current class shows your level as the stack number.
+- **Below:** your class's buffs, perks and passives in level order. Locked ones show as gray bricks.
+- **Clicking** an icon puts its name in the window title, with its icon and a color, and sends the full description to chat. Picking a class takes two clicks on the same icon, so a stray click never changes it.
+- **The title** shows your class and level when the menu opens.
+
+The menu needs **server side characters** (`tshock/sscconfig.json`, `"Enabled": true`). The server never creates a real chest: an invisible chest tile is sent to that player only, and is removed when the menu closes. Clicks are refused and the icons are sent back, so nothing can be taken out of the menu or put into it.
+
+Items keep their vanilla names on hover. The vanilla client has no way for a server to rename an item, so the window title and the chat legend say what each icon is.
+
+## Planned: specializations
+
+At level 10 each class will pick a specialization tied to the weapon types it uses (for example, Guardian, Berserker, Duelist and Juggler for melee). Class bonuses are done by the server (extra hits, damage absorption, healing, max life and mana with SSC), never with potion buffs, so they always stack with the potions players drink. The design notes, in Portuguese, are in [docs/design-interface-especializacoes-lootchest.md](docs/design-interface-especializacoes-lootchest.md).
 
 ## Difficulty scaling
 

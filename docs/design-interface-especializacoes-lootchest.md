@@ -216,6 +216,40 @@ Isso define o que cada especialização pode oferecer de forma realista:
 | Bônus em acerto crítico | ✅ | O pacote de strike traz a flag de crítico. |
 | Reduzir dano recebido | ⚠️ | O dano é calculado no cliente. Só dá para **devolver** parte da vida depois do golpe (escudo/absorção) ou dar buffs de defesa (Ironskin, Endurance). |
 | Mudar velocidade de ataque, defesa ou crit do jogador direto | ❌ | Só via buffs vanilla que já fazem isso. |
+| Vida e mana máximas | ✅ (só SSC) | Pacotes 16 (`statLifeMax`) e 42 (`statManaMax`): o cliente aceita para si mesmo quando `Main.ServerSideCharacter` está ligado. Acessórios somam por cima. |
+| Devolver munição gasta | ✅ (só SSC) | O servidor reenvia o slot com a quantidade anterior. Soma com a Ammo Reservation Potion. |
+
+### 2.3.1 Regra: atributos pelo servidor, buffs só com poções
+
+Buff de poção dado pela classe **não soma** com a mesma poção: beber Ironskin só renova a duração, e o bônus da classe some. Isso também deixaria sem papel uma futura classe de alquimia ou druida, cujas poções seriam o diferencial.
+
+Por isso as especializações **não usam buffs de poção ou comida** (Ironskin, Endurance, Regeneration, Rage, Wrath, Tipsy, Well Fed e afins). Cada efeito é feito pelo servidor:
+
+| Efeito desejado | Como fazer sem buff |
+| --- | --- |
+| Mais dano / crítico | Golpe extra (`StrikeNPC`) ou crítico sorteado pelo servidor |
+| "Velocidade de ataque" | Golpe extra a cada N acertos (mesmo efeito de DPS) |
+| Defesa / redução de dano | **Absorção:** devolver X% do dano recebido logo após o golpe, com teto |
+| Regeneração / roubo de vida | `Heal` pelo servidor, com teto por segundo |
+| Vida / mana máximas | Pacotes 16 e 42 (SSC) |
+| Economia de munição | Reenviar o slot de munição (SSC) |
+
+Conferido no código do jogo: os buffs Beetle (até +30% de velocidade melee, −45% de dano) não servem, porque o jogo os remove se o jogador não estiver com a armadura Beetle. Well Fed substituiria a comida do jogador.
+
+Exceção aceitável: **habilidades ativas curtas** (poucos segundos, com cooldown) podem usar um buff como Swiftness, porque a sobreposição com a poção dura pouco e não é o bônus permanente da classe.
+
+**Cuidados com vida e mana máximas:**
+
+1. É o mesmo valor que os Cristais de Vida aumentam, e o SSC o salva no personagem. O valor real fica no banco do TSRpg; o bônus só é somado enquanto o jogador está online e é retirado antes de qualquer salvamento do SSC (saída, troca de classe, desligar o plugin).
+2. O TShock limita vida e mana (`MaxHP` / `MaxMP` no `config.json`) e trata quem passa disso como trapaça. O limite precisa subir junto com o bônus máximo possível.
+3. Sem SSC, as classes ficam só com dano, crítico, absorção e cura.
+
+**Regras de balanceamento para todas as especializações:**
+
+- **Teto por segundo**, não só por golpe. Ioiôs, minions e armas automáticas acertam muitas vezes por segundo.
+- **PvP desligado** para golpes extras, provocação, marcação e ricochete.
+- **Chefes:** provocação e controle com duração menor e cooldown maior.
+- **XP de grupo:** papéis que causam pouco dano (tank, suporte) precisam dividir a XP do kill com quem estava perto.
 
 ### 2.4 Modelo de progressão sugerido
 
@@ -227,33 +261,49 @@ Isso define o que cada especialização pode oferecer de forma realista:
 
 ### 2.5 Melee (Guerreiro)
 
-| Especialização | Foco | Ideias de nós |
-| --- | --- | --- |
-| **Tank (Guardião)** | Segurar inimigos, proteger o grupo | **Provocar:** inimigos próximos passam a mirar o Guardião por X s (cooldown). **Absorção:** cura X% do dano recebido logo após o golpe. **Muralha:** aliados perto ganham Ironskin/Endurance. **Espinhos** escalando com a vida máxima. Bônus de XP compartilhada por "dano sofrido no lugar do grupo". |
-| **DPS (Berserker)** | Espadas, lanças, manguais | **Fúria:** dano extra que aumenta conforme a vida cai. **Execução:** +dano contra inimigos abaixo de 25% de vida. Roubo de vida maior. Golpe brutal com mais chance. |
-| **Ioiô (Duelista)** | Ioiôs (e bumerangues como ramo) | Bônus de dano exclusivo para ioiô. **Ricochete:** chance de um segundo hit em outro inimigo próximo. Debuffs acumulados por hits rápidos (ioiô bate muitas vezes por segundo, então chance baixa e valor baixo). Buff de velocidade de movimento. |
+A wiki divide melee em espadas (largas e curtas), lanças, manguais, bumerangues, ioiôs e "outros" (Terragrim, guarda-chuva, lanças de justa, Zenith). Cada especialização tem **afinidade** com algumas categorias: bônus cheio com elas, metade com as outras. Assim ninguém fica preso a uma arma ruim no começo do jogo. "Outros" contam como afinidade parcial para todas.
+
+| Especialização | Afinidade | Estilo | Mecânicas (pela regra 2.3.1) |
+| --- | --- | --- | --- |
+| **Guardião** (tank) | Espadas largas, lanças | Segura a linha | **+Vida máxima** (SSC). **Absorção:** devolve X% do dano recebido, com teto. **Provocar:** inimigos perto passam a mirar o Guardião por X s (`npc.target`), com cooldown. **Espinhos:** devolve dano a quem o acerta corpo a corpo. Ganha **metade** do dano por nível das outras. |
+| **Berserker** (guerreiro com regen) | Manguais, espadas largas | Troca vida por dano e recupera batendo | **Roubo de vida** com teto por segundo. **Sede de sangue:** quanto menos vida, mais dano extra e mais roubo. **Execução:** +dano em inimigos abaixo de 25% de vida. Regeneração em combate (`Heal`). |
+| **Duelista** (velocidade) | Espadas curtas, espadas rápidas | Muitos golpes seguidos | **Ímpeto:** acertos dentro de 2 s acumulam cargas (até 5). Cada carga aumenta a chance de golpe extra. Parar por 2 s zera. **Ativa:** investida com Swiftness por 3 s (exceção da regra, cooldown longo). |
+| **Malabarista** | Ioiôs, bumerangues | Melee à distância e controle | **Ricochete:** chance de um golpe extra num inimigo próximo, com teto por segundo. **Debuff rotativo** nos inimigos (Ichor → Venom → On Fire), um por vez. |
+
+Velocidade de ataque real só existe via buffs (Tipsy, Well Fed), por isso o Duelista usa golpes extras.
 
 ### 2.6 Magic (Mago)
 
 | Especialização | Foco | Ideias de nós |
 | --- | --- | --- |
 | **DPS (Arcanista)** | Dano bruto | Explosão arcana com mais chance e mais dano. **Sobrecarga:** dano extra quando a mana está cheia. Debuffs elementais (Frostburn, Shadowflame, On Fire) que se combinam. Recuperação de mana em kill. |
-| **Suporte (Clérigo)** | Cura e buffs | Cura em grupo mais forte (evolução do *Spectral Mend*). **Bênçãos:** aplica Regeneration, Ironskin, Swiftness em aliados próximos. **Purificar:** remove debuffs de aliados (o servidor pode mandar o buff com tempo 0). **Ressurreição suave:** reduz o tempo de respawn do grupo ou cura de emergência quando um aliado cai abaixo de 20%. |
+| **Suporte (Clérigo)** | Cura e buffs | Cura em grupo mais forte (evolução do *Spectral Mend*). **Bênçãos:** aliados próximos ganham absorção de dano e regeneração pelo servidor (regra 2.3.1, sem buffs de poção). **+Mana máxima** (SSC). **Purificar:** remove debuffs de aliados (o servidor pode mandar o buff com tempo 0). **Ressurreição suave:** reduz o tempo de respawn do grupo ou cura de emergência quando um aliado cai abaixo de 20%. |
 
 ### 2.7 Ranged (Atirador)
 
-| Especialização | Foco | Ideias de nós |
-| --- | --- | --- |
-| **DPS (Atirador de elite)** | Dano e crítico | **Crítico letal:** dano extra só em acertos críticos. Headshot e Deadeye melhorados. Bônus por subtipo: arcos (perfuração), armas de fogo (cadência), lançadores (área). |
-| **Suporte (Caçador)** | Debuffs no inimigo | **Marcar presa:** o inimigo atingido fica marcado e recebe +X% de dano de **todo o grupo**. Ichor e Betsy's Curse (reduz defesa). Slow/Frostburn para controle. **Midas:** chance de aplicar Midas (mais moedas na morte). Bônus de XP para o grupo ao matar alvos marcados. |
+Categorias pela munição da arma (`item.useAmmo`): flechas (arcos e repetidoras), balas (armas de fogo), foguetes (lançadores), dardos, gel (lança-chamas) e armas consumíveis (`item.consumable && item.ranged`).
+
+| Especialização | Afinidade | Estilo | Mecânicas (pela regra 2.3.1) |
+| --- | --- | --- | --- |
+| **Atirador de Elite** (DPS de crítico) | Flechas | Poucos tiros, muito dano | **Crítico letal:** o servidor sorteia um crítico próprio e aplica dano extra. **Mira firme:** parado, o dano extra cresce a cada segundo, até um teto (substitui a passiva *Steady Aim*, que hoje usa Rage). **Perfurar:** chance de golpe extra no inimigo mais próximo atrás do alvo. |
+| **Artilheiro** (volume e área) | Balas, foguetes, gel | Muitos tiros, dano em área | **Cadência:** golpe extra a cada N acertos. **Estilhaços:** com foguetes, dano extra em inimigos perto do alvo. **Economia:** chance de devolver a munição gasta (SSC), com teto por segundo. |
+| **Caçador** (suporte de debuff) | Dardos, consumíveis; qualquer arma ranged com bônus parcial | Prepara o alvo para o grupo | **Marcar presa:** um inimigo por vez fica marcado e recebe +X% de dano de **todo o grupo**. **Debuffs:** Ichor e Betsy's Curse (reduzem defesa), Midas (mais moedas). **Recompensa:** XP extra para o grupo ao matar um alvo marcado. |
+
+Debuffs em **NPCs** não esbarram na regra 2.3.1: o problema da sobreposição é só com buffs de poção no jogador.
 
 ### 2.8 Summoner (Invocador)
 
-| Especialização | Foco | Ideias de nós |
-| --- | --- | --- |
-| **Sentinela (Engenheiro)** | Sentinelas, defesa de área | Dano extra de sentinelas. **Aura de torre:** aliados perto de uma sentinela do jogador ganham buff (Ironskin, Regeneration). Debuffs aplicados pelas sentinelas. Bom para defender eventos (invasões, Old One's Army). |
-| **Invocação (Domador)** | Minions | Evolução do *Pack Instinct*. Roubo de vida via minions (*Life Bond*). **Frenesi:** quanto mais minions, mais dano por hit. |
-| *(opcional)* **Chicote (Comandante)** | Chicotes + minions | Inimigo atingido pelo chicote recebe mais dano dos minions e sentinelas de **todos** os aliados. Combina com os papéis de suporte. |
+A wiki divide summon em minions, sentinelas e chicotes. O servidor já conta os projéteis ativos de cada jogador (`ClassSystem.minionCounts`); a contagem passa a separar `proj.minion` de `proj.sentry`.
+
+| Especialização | Afinidade | Estilo | Mecânicas (pela regra 2.3.1) |
+| --- | --- | --- | --- |
+| **Domador** (minions) | Cajados de minion | Exército que cresce | **Matilha:** dano extra por minion ativo, com teto (evolução do *Pack Instinct*). **Vínculo:** roubo de vida pelos acertos dos minions, com teto por segundo (evolução do *Life Bond*). |
+| **Engenheiro** (sentinelas) | Cajados de sentinela | Defesa de área | **Dano extra** das sentinelas. **Aura de torre:** aliados perto de uma sentinela do jogador regeneram vida (`Heal` pelo servidor, não Regeneration). **Debuffs** aplicados pelas sentinelas. Forte em invasões e na Old One's Army. |
+| **Comandante** (chicotes) | Chicotes | Suporte ofensivo | **Ordem de ataque:** o inimigo atingido pelo chicote recebe +X% de dano dos minions e sentinelas de **todos** os aliados por alguns segundos. Soma com a marcação vanilla dos chicotes, porque é um bônus separado no servidor. |
+
+Número de minions (`maxMinions`) é calculado no cliente e só aumenta por buff (Bewitched, Summoning Potion) ou equipamento. Pela regra 2.3.1, o Domador ganha **dano por minion** em vez de mais vagas.
+
+**Limitação técnica:** o pacote de acerto (28) não diz qual projétil causou o dano. Para atribuir o acerto a minion, sentinela ou chicote, o servidor usa o item na mão (chicote) e os projéteis do jogador perto do inimigo atingido. Funciona na maioria dos casos, mas não é exato quando há várias fontes no mesmo lugar.
 
 ---
 
